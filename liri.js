@@ -36,7 +36,6 @@ switch (userInput) {
 }
 
 
-
 //This is the function to be called when user inputs node app.js my-tweets.  This function will pull 20 twitter posts and print them in the terminal
 function twitterFunction() {
     //for user based authentication.  Var client now holds the twitter keys that are stored in keys.js
@@ -63,7 +62,7 @@ function twitterFunction() {
 function spotifyFunction() {
 
 
-    var songSearch = (process.argv.slice(3).join(" ") || "The Sign");
+    var songSearch = (process.argv.slice(3).join(" ") || "I Want It That Way");
 
     var spotify = new Spotify({
         id: '955f0e850ba9400594a646ba34549152',
