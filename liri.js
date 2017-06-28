@@ -1,121 +1,154 @@
-var fs = require('fs');
-var request = require('request');
-var inquirer = require('inquirer');
-var keys = require('./keys.js');
-var Twitter = require('twitter');
-var client = new Twitter({
-  consumer_key: keys.twitterKeys.consumer_key,
-  consumer_secret: keys.twitterKeys.consumer_secret,
-  access_token_key: keys.twitterKeys.access_token_key,
-  access_token_secret: keys.twitterKeys.access_token_secret
-});
-var Spotify = require('node-spotify-api');
-var spotify = new Spotify({
-  id: keys.spotifykeys.client_ID,
-  secret: keys.spotifykeys.client_secret
-});
+//Required Variables/Dependencies
+var fs = require("fs");
+var keys = require("./keys.js");
+var twitter = require("twitter");
+var Spotify = require("node-spotify-api");
+var request = require("request");
+var twitterKeys = keys.twitterKeys;
 
-//Prompt User Input
+// //input variables
+var userInput = process.argv[2];
+var alternateUserInput = process.argv[3];
 
-inquirer.prompt([
-  {
-    type: "list",
-    message: "Please select",
-    choices: ["Read my tweets", "spotify-this-song", "Get information about a film from OMDB", "Trigger the unknown"],
-    name: "whichAction"
-  },
-  {
-    type: "input",
-    message: "Please enter the name of a song",
-    name: "song",
-    when: function(answers){return answers.whichAction === "spotify-this-song";}
-  },
-  {
-    type: "input",
-    message: "Enter the name of a film",
-    name: "film",
-    when: function(answers){return answers.whichAction === "Get information about a film from OMDB";}
-  }
-]).then(function(user) {
- 
-  var action = user.whichAction;
-  var currentdate = new Date();   // used to set date information when writing to log.txt
+console.log('Enter "my-tweets", "spotify-this-song", "movie-this" or "do-what-it-says"');
+
+// //**********SWITCH CASE COMMAND**********
+
+switch (userInput) {
+    case 'my-tweets':
+        twitterFunction();
+        break;
+
+    case 'spotify-this-song':
+        spotifyFunction();
+        break;
+
+    case 'movie-this':
+        movieFunction();
+        break;
+
+        case 'do-what-it-says':
+        doWhatItSaysFunction();
+        break;
+
+    default:
+        console.log("Enter 'myTwitter', 'spotifyThisSong', 'movie-this', or 'do-what-it-says'");
+}
 
 
 
+//This is the function to be called when user inputs node app.js my-tweets.  This function will pull 20 twitter posts and print them in the terminal
+function twitterFunction() {
+    //for user based authentication.  Var client now holds the twitter keys that are stored in keys.js
+    var client = new twitter(twitterKeys);
+    //passing the endpoint and parameters.
+    client.get("statuses/user_timeline", { count: 20 }, function(error, tweets, response) {
+        if (!error)
+        //object"tweets".methodName"forEach"--->using forEach method to execute the function
+            tweets.forEach(function(tweet) {
+            //console.logging tweet text, creation time, times favorited, times retweeted
+            console.log(tweet.text);
+            console.log("created: " + tweet.created_at);
+            console.log("favorited: " + tweet.favorite_count + " times");
+            console.log("retweeted: " + tweet.retweet_count + " times");
+            console.log("***********************************");
+        });
+    })
+    //the user input will append to the log.txt file(ex. my tweets)
+    fs.appendFile("log.txt", ", " + userInput);
+}
 
-  var lookup = {
 
-//Log into log.txt
+// process for spotify-this-song command
+function spotifyFunction() {
 
-  	logTime: "Log entry created on " + currentdate.getDate() + "/" + (currentdate.getMonth()+1)  + "/" + currentdate.getFullYear() + " @ " + currentdate.getHours() + ":" + currentdate.getMinutes() + ":" + currentdate.getSeconds(),
 
-  	log: function(thingToLog){
-			fs.appendFile("log.txt", thingToLog, function(error){
-				if(error)console.log("error");
-			});
-		},
+    var songSearch = (process.argv.slice(3).join(" ") || "The Sign");
 
-//Twitter
+    var spotify = new Spotify({
+        id: '955f0e850ba9400594a646ba34549152',
+        secret: '72354b10508947fa98db066ee52fd00b'
+    });
 
-		"Read my tweets": function() {
-			var params = {screen_name: 'noe_tlz10', count: '20'};
-			client.get('statuses/user_timeline', params, function(error, tweets) {
-			  if (!error) {
-			    for (var i = 0; i < tweets.length; i++) {
-		    		console.log("\n" + tweets[i].created_at);
-		    		console.log(tweets[i].text + "\n");
-		    		lookup.log("\n" + lookup.logTime + "\n" + "Posted on " + tweets[i].created_at + "\n" + tweets[i].text + "\n");
-			    }
-  			}
-			});
-		},
+    spotify.search({ type: 'track', query: songSearch }, function(err, data) {
+        if (err) {
+            return console.log('Error occurred: ' + err);
+        } else if (songSearch != "The Sign") {
+            console.log("Artist Name: " + data.tracks.items[0].artists[0].name);
+            console.log("Track Name: " + data.tracks.items[0].name);
+            console.log("Preview URL: " + data.tracks.items[0].preview_url);
+            console.log("Album Name: " + data.tracks.items[0].album.name);
 
-//Spotify
+           } else {
+                console.log("Artist Name: " + data.tracks.items[4].artists[0].name);
+                console.log("Track Name: " + data.tracks.items[4].name);
+                console.log("Preview URL: " + data.tracks.items[4].preview_url);
+                console.log("Album Name: " + data.tracks.items[4].album.name);
+            }
+        
+    });
 
-		"spotify-this-song": function(){
-			if(!user.song){user.song = "THE SIGN ace of base";}
-			spotify.search({type: 'track', query: user.song, limit: 1}, function(err, data){
-				if (err) {console.log("Error occurred" + err);return;}
-				// console.log(JSON.stringify(data, null, 2));    //test prints the full Spotify return JSON object
-				for (var i = 0; i < data.tracks.items.length; i++) {
-					var songWrite = "\nThe song " +  data.tracks.items[0].name.toUpperCase() + " is by the artist " + data.tracks.items[0].artists[0].name.toUpperCase() + " and appears on the album " + data.tracks.items[0].album.name.toUpperCase() + ". To preview on Spotify, command+double-click this link: " + data.tracks.items[0].preview_url +"\n";
-					console.log(songWrite);
-		  		lookup.log("\n \n" + lookup.logTime + songWrite);
-					
-				}
-			});
-		},
+//log this command in the log.txt file
+fs.appendFile("log.txt", "spotify-this-song," + songSearch, function(err) {
+        if (err) {
+            console.log(err);
+        }
+        else {
+            console.log("You've logged a spotify-this-song command in the log.txt file!");
+        }
+    })
 
-//OMDB
+}
 
-		"Get information about a film from OMDB": function(){
-			if(!user.film){user.film = "Mr. Nobody";}
-			var queryURL = "http://www.omdbapi.com/?t=" + user.film + "&y=&plot=short&apikey=40e9cece";
-			request(queryURL, function(error, response, body) {
-			  if (!error && response.statusCode === 200) {
-		  		var filmWrite = ("\nThe movie title is " + JSON.parse(body).Title.toUpperCase() + "\nThe film was released in " + JSON.parse(body).Year + "\nIt's IMBD Rating is " + JSON.parse(body).imdbRating + "\nThe film was produced in " + JSON.parse(body).Country + "\nThe film's language is " +JSON.parse(body).Language + "\nThe plot of the movie is " + JSON.parse(body).Plot + "\nActors in the movie include " + JSON.parse(body).Actors + "\nOfficial Website is " + JSON.parse(body).Website + "\n");
-		  		console.log(filmWrite);
-		  		lookup.log("\n \n" + lookup.logTime + filmWrite);
-			    // console.log(response);   logs full JSON response
-			  }
-			});
-		},
 
-//Random
+// This function will have the user enter a movie title and pull information which will print to the terminal.
+function movieFunction() {
+    //console.log when entering the function
+    var movieName = (process.argv.slice(3).join("+") || "mr.nobody");
 
-		"Trigger the unknown": function(){
-			fs.readFile("random.txt", "UTF8", function(error, data){
-				data = data.split(",");
-				action = data[0];
-				user.song = data[1];
-				lookup[action]();
-			});
-		}
-	};  // End of lookup-Action object
+    var queryUrl = "http://www.omdbapi.com/?t=" + movieName + "&y=&plot=short&tomatoes=true&apikey=40e9cece";
 
-	
+    request(queryUrl, function(error, response, body) {
 
-	lookup[action]();
+        if (!error && response.statusCode === 200) {
+            console.log("Title: " + JSON.parse(body).Title);
+            console.log("Release Year: " + JSON.parse(body).Year);
+            console.log("IMDB Rating: " + JSON.parse(body).imdbRating);
+            console.log("Country/Countries where the movie was produced: " + JSON.parse(body).Country);
+            console.log("Language: " + JSON.parse(body).Language);
+            console.log("Plot: " + JSON.parse(body).Plot);
+            console.log("Actors: " + JSON.parse(body).Actors);
+            console.log("Rotten Tomatoes URL: " + JSON.parse(body).tomatoURL);
+        }
+    })
 
-});
+//log this command in the log.txt file
+fs.appendFile("log.txt", "movie-this," + movieName, function(err) {
+        if (err) {
+            console.log(err);
+        }
+        else {
+            console.log("You've logged a movie-this command in the log.txt file!");
+        }
+    })
+
+}
+
+
+// // //Function needed for Do-what-it-says
+function doWhatItSaysFunction() {
+    fs.readFile("random.txt", "utf8", function(error, body) {
+        console.log(body);
+        var bodyArr = body.split(",");
+        if (bodyArr[0] === "my-tweets"){
+            twitterFunction();
+        } else if (bodyArr[0] === "spotify-this-song"){
+            spotifyFunction();
+        } else if (bodyArr[0] === "movie-this"){
+            movieFunction();
+        }
+
+        })
+    //The user input will append to the log.txt file(ex. do-what-it-says + my tweets)
+    fs.appendFile("log.txt", ", " + userInput + " " +alternateUserInput);
+    };
