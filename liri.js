@@ -10,7 +10,7 @@ var twitterKeys = keys.twitterKeys;
 var userInput = process.argv[2];
 var alternateUserInput = process.argv[3];
 
-console.log('Enter "my-tweets", "spotify-this-song", "movie-this" or "do-what-it-says"');
+// console.log('Enter "my-tweets", "spotify-this-song", "movie-this" or "do-what-it-says"');
 
 // //**********SWITCH CASE COMMAND**********
 
