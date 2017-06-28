@@ -72,7 +72,7 @@ function spotifyFunction() {
     spotify.search({ type: 'track', query: songSearch }, function(err, data) {
         if (err) {
             return console.log('Error occurred: ' + err);
-        } else if (songSearch != "The Sign") {
+        } else if (songSearch != "I Want It That Way") {
             console.log("Artist Name: " + data.tracks.items[0].artists[0].name);
             console.log("Track Name: " + data.tracks.items[0].name);
             console.log("Preview URL: " + data.tracks.items[0].preview_url);
